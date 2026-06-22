@@ -54,7 +54,6 @@ if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.current_user = None
 
-# Khởi tạo bộ nhớ tạm để giữ sản phẩm được click chọn từ thanh gợi ý search
 if 'selected_product_mv' not in st.session_state:
     st.session_state.selected_product_mv = None
 
@@ -77,12 +76,12 @@ if not st.session_state.logged_in:
                         st.session_state.logged_in = True
                         st.session_state.current_user = u_in
                         st.rerun()
-                    else: st.error("Tài khoản chưa được kích hoạt quyền truy cập!")
+                    else: st.error("Tài khoản chưa được kích hoạt quyền truy cập mạng!")
                 else: st.error("Mật khẩu không chính xác!")
-            else: st.error("Tài khoản không tồn tại trên hệ thống!")
+            else: st.error("Tài khoản không tồn tại!")
             
     with col_l2:
-        st.subheader("📝 ĐĂNG KÝ TÀI KHOẢN MỚI")
+        st.subheader("📝 ĐĂNG KÝ TÀI KHỎN MỚI")
         r_user = st.text_input("Tên đăng nhập mới (viết liền không dấu):", key="r_user").strip()
         r_name = st.text_input("Họ và tên thật của nhân sự:", key="r_name").strip()
         r_pass = st.text_input("Tạo mật khẩu truy cập:", type="password", key="r_pass")
@@ -94,7 +93,7 @@ if not st.session_state.logged_in:
             else:
                 st.session_state.users[r_user] = {"name": r_name, "password": r_pass, "active": False, "role": "4_staff"}
                 luu_du_lieu_he_thong()
-                st.success("Đăng ký thành công! Hãy liên hệ cấp trên phê duyệt kích hoạt.")
+                st.success("Đăng ký thành công! Hãy chờ cấp trên phê duyệt.")
 
 # ==========================================
 # 3. DASHBOARD ĐIỀU HÀNH SMART-HUB HỒNG PHÁT CHÍNH THỨC
@@ -116,7 +115,7 @@ else:
             
     st.markdown("---")
     
-    # CẢNH BÁO BẢO QUẢN SẢN PHẨM HẾT HẠN (DƯỚI 7 NGÀY)
+    # CẢNH BÁO BẢO QUẢN SẢN PHẨM HẾT HẠN
     co_canh_bao = False
     for item in st.session_state.kho_hang:
         try:
@@ -133,9 +132,7 @@ else:
 
     st.markdown("---")
     
-    # ==========================================
-    # CHỨC NĂNG GỢI Ý SEARCH GOOGLE ĐỘNG (DƯỚI DẠNG THẺ TAGS ABC)
-    # ==========================================
+    # CHỨC NĂNG GỢI Ý SEARCH ĐỘNG THEO CHỮ CÁI ABC
     st.markdown("### 🔍 SEARCH SUGGESTIONS (Gợi ý tìm kiếm thông minh xếp lịch ABC)")
     q_search = st.text_input("Gõ chữ cái đầu hoặc quét mã vạch (Hệ thống tự rớt gợi ý chữ cái đầu lên trước):", key="hongphat_smart_search").strip()
     q_clean = loai_bo_dau_tieng_viet(q_search)
@@ -149,30 +146,25 @@ else:
             ma_vach_clean = sp["ma_vach"].lower()
             
             if q_clean in ten_clean or q_clean in ma_vach_clean:
-                # Nếu từ khóa khớp ngay chữ cái đầu -> ưu tiên nhóm 1
                 if ten_clean.startswith(q_clean) or ma_vach_clean.startswith(q_clean):
                     start_with_query.append(sp)
                 else:
                     contain_query.append(sp)
 
-        # Sắp xếp danh sách tự động theo bảng chữ cái ABC
         start_with_query.sort(key=lambda x: x["ten"])
         contain_query.sort(key=lambda x: x["ten"])
         danh_sach_goi_y = start_with_query + contain_query
 
         if danh_sach_goi_y:
             st.markdown("👇 *Bấm chọn một trong các từ khóa gợi ý bên dưới để xem vị trí định vị:*")
-            
-            # Tạo các nút bấm gợi ý động nằm ngang giống thanh gợi ý Google Search
             cols_tags = st.columns(min(len(danh_sach_goi_y), 6))
-            for i, item in enumerate(danh_sach_goi_y[:6]): # Giới hạn hiển thị tối đa 6 gợi ý tốt nhất
+            for i, item in enumerate(danh_sach_goi_y[:6]):
                 with cols_tags[i % 6]:
                     if st.button(f"🔍 {item['ten'].upper()}", key=f"tag_btn_{item['ma_vach']}"):
                         st.session_state.selected_product_mv = item['ma_vach']
         else:
             st.error("❌ Không tìm thấy sản phẩm nào khớp với chữ cái bạn vừa nhập.")
 
-    # Hiển thị thông tin định vị chi tiết khi sếp click vào thẻ gợi ý hoặc tìm ra sản phẩm duy nhất
     if st.session_state.selected_product_mv:
         for sp in st.session_state.kho_hang:
             if sp["ma_vach"] == st.session_state.selected_product_mv:
@@ -198,3 +190,13 @@ else:
         with col_a5: add_loc = st.text_input("Vị trí kệ kho chi tiết:", key="w_add_loc").strip()
         
         if st.button("➕ XÁC NHẬN GHI SỔ NHẬP KHO", type="primary", use_container_width=True):
+            if not add_name or not add_barcode or not add_loc:
+                st.error("Vui lòng nhập đầy đủ Tên, Mã vạch và Vị trí lưu kho kệ!")
+            elif any(x["ma_vach"] == add_barcode for x in st.session_state.kho_hang):
+                st.error("Hệ thống từ chối: Mã vạch hàng hóa này đã tồn tại sẵn!")
+            else:
+                st.session_state.kho_hang.append({"ten": add_name.upper(), "ma_vach": add_barcode, "ngay_sx": add_nsx, "ngay_hh": add_nhh, "vi_tri": add_loc})
+                luu_du_lieu_he_thong()
+                st.success(f"Đã cập nhật thành công sản phẩm {add_name.upper()}!")
+                st.rerun()
+
