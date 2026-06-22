@@ -32,8 +32,7 @@ if not os.path.exists(DB_FILE):
         "users": {"Zeroizerd": {"name": "Đồng Sáng Lập Zeroizerd", "password": "13723@", "active": True, "role": "1_creator"}},
         "kho_hang": [
             {"ten": "CHOCOMONT BÁNH GẤU", "ma_vach": "1111", "ngay_sx": "2026-01-01", "ngay_hh": "2026-06-30", "vi_tri": "Khu A - Kệ 01 - Tầng 2"},
-            {"ten": "CHẢO CHỐNG DÍNH", "ma_vach": "2222", "ngay_sx": "2026-01-01", "ngay_hh": "2028-01-01", "vi_tri": "Khu A - Kệ 02 - Tầng 1"},
-            {"ten": "BÁNH MÌ SỮA", "ma_vach": "3333", "ngay_sx": "2026-01-01", "ngay_hh": "2026-02-01", "vi_tri": "Khu B - Kệ 01 - Tầng 1"}
+            {"ten": "CHẢO CHỐNG DÍNH", "ma_vach": "2222", "ngay_sx": "2026-01-01", "ngay_hh": "2028-01-01", "vi_tri": "Khu A - Kệ 02 - Tầng 1"}
         ]
     }
     with open(DB_FILE, "w", encoding="utf-8") as f:
@@ -67,17 +66,22 @@ if not st.session_state.logged_in:
                         st.session_state.logged_in = True
                         st.session_state.current_user = u_in
                         st.rerun()
-                    else: st.error("Tài khoản chưa được kích hoạt quyền!")
-                else: st.error("Mật khẩu không chính xác!")
-            else: st.error("Tài khoản không tồn tại!")
+                    else:
+                        st.error("Tài khoản chưa được kích hoạt quyền!")
+                else:
+                    st.error("Mật khẩu không chính xác!")
+            else:
+                st.error("Tài khoản không tồn tại!")
     with col_l2:
         st.subheader("📝 ĐĂNG KÝ MỚI")
         r_user = st.text_input("Tên đăng nhập mới (viết liền):", key="r_user").strip()
         r_name = st.text_input("Họ và tên thật nhân sự:", key="r_name").strip()
         r_pass = st.text_input("Tạo mật khẩu truy cập:", type="password", key="r_pass")
         if st.button("GỬI YÊU CẦU ĐĂNG KÝ", use_container_width=True):
-            if not r_user or not r_name or not r_pass: st.error("Vui lòng điền đầy đủ thông tin!")
-            elif r_user in st.session_state.users: st.error("Tên tài khoản này đã có người sử dụng!")
+            if not r_user or not r_name or not r_pass:
+                st.error("Vui lòng điền đầy đủ thông tin!")
+            elif r_user in st.session_state.users:
+                st.error("Tên tài khoản này đã có người sử dụng!")
             else:
                 st.session_state.users[r_user] = {"name": r_name, "password": r_pass, "active": False, "role": "4_staff"}
                 luu_du_lieu_he_thong()
@@ -107,10 +111,14 @@ else:
             days_left = (datetime.strptime(item.get("ngay_hh", "2099-12-31"), "%Y-%m-%d") - datetime.now()).days + 1
             if days_left <= 7:
                 co_canh_bao = True
-                if days_left < 0: st.error(f"🚨 **💥 QUÁ HẠN {abs(days_left)} NGÀY**: {item['ten'].upper()} | Kệ: {item['vi_tri']}")
-                else: st.warning(f"⚠️ **⏳ SẮP HẾT HẠN (Còn {days_left} ngày)**: {item['ten'].upper()} | Kệ: {item['vi_tri']}")
-        except: pass
-    if not co_canh_bao: st.success("✅ Toàn bộ vật liệu kho nằm trong hạn sử dụng an toàn.")
+                if days_left < 0:
+                    st.error(f"🚨 **💥 QUÁ HẠN {abs(days_left)} NGÀY**: {item['ten'].upper()} | Kệ: {item['vi_tri']}")
+                else:
+                    st.warning(f"⚠️ **⏳ SẮP HẾT HẠN (Còn {days_left} ngày)**: {item['ten'].upper()} | Kệ: {item['vi_tri']}")
+        except:
+            pass
+    if not co_canh_bao:
+        st.success("✅ Toàn bộ vật liệu kho nằm trong hạn sử dụng an toàn.")
     st.markdown("---")
     
     # ==========================================
@@ -118,7 +126,6 @@ else:
     # ==========================================
     st.markdown("### 🔍 SMART AUTO-SUGGESTIONS (Tìm kiếm gõ chữ thả gợi ý liền)")
 
-    # Sử dụng hộp chứa thông minh làm menu thả rớt tự động dưới chân ô tìm kiếm
     with st.popover("👇 NHẤP VÀO ĐÂY ĐỂ GÕ CHỮ CÁI / XEM GỢI Ý ABC", use_container_width=True):
         chu_cai_nhap = st.text_input("Gõ chữ cái đầu, tên hàng hoặc quét mã vạch (Danh sách ABC tự cập nhật bên dưới):", value="", key="inst_search").strip()
         chu_cai_clean = loai_bo_dau_tieng_viet(chu_cai_nhap)
@@ -139,33 +146,41 @@ else:
         contain_with.sort(key=lambda x: x["ten"])
         ket_qua_goi_y = start_with + contain_with
         
-        # Hiển thị kết quả động tức thì ngay trong menu cuộn rớt khi sếp đang gõ phím
         if chu_cai_nhap:
             st.markdown(f"✨ *Gợi ý khớp cho từ khóa '{chu_cai_nhap}':*")
         else:
             st.markdown("📋 *Toàn bộ danh sách kho hàng (Xếp theo thứ tự ABC):*")
             
         for item_goi_y in ket_qua_goi_y:
-            with st.container():
-                st.markdown(f"**📦 {item_goi_y['ten'].upper()}**")
-                st.markdown(f"📍 Vị trí kệ: `{item_goi_y['vi_tri']}` | Mã vạch: `{item_goi_y['ma_vach']}` | HSD: `{item_goi_y['ngay_hh']}`")
-                st.markdown("---")
+            st.markdown(f"**📦 {item_goi_y['ten'].upper()}**")
+            st.markdown(f"📍 Vị trí kệ: `{item_goi_y['vi_tri']}` | Mã vạch: `{item_goi_y['ma_vach']}` | HSD: `{item_goi_y['ngay_hh']}`")
+            st.markdown("---")
 
     st.markdown("---")
 
     # KHU VỰC THAO TÁC CỦA QUẢN LÝ (THÊM / SỬA / XÓA)
     if role_now in ["1_creator", "2_owner", "3_admin"]:
         st.markdown("### ⚙️ MANAGEMENT ZONE (Khu vực quản trị dành cho Ban Quản Lý Chợ)")
+        
+        # CHỨC NĂNG: NHẬP VẬT TƯ MỚI
         st.markdown("#### ➕ Nhập thêm vật tư hàng hóa mới")
         col_a1, col_a2, col_a3, col_a4, col_a5 = st.columns(5)
-        with col_a1: add_name = st.text_input("Tên hàng hóa:", key="w_add_name").strip()
-        with col_a2: add_barcode = st.text_input("Mã vạch định danh:", key="w_add_bar").strip()
-        with col_a3: add_nsx = st.date_input("Ngày sản xuất:", value=date.today(), key="w_add_nsx").strftime("%Y-%m-%d")
-        with col_a4: add_nhh = st.date_input("Hạn sử dụng:", value=date.today(), key="w_add_nhh").strftime("%Y-%m-%d")
-        with col_a5: add_loc = st.text_input("Vị trí kệ kho chi tiết:", key="w_add_loc").strip()
+        with col_a1:
+            add_name = st.text_input("Tên hàng hóa:", key="w_add_name").strip()
+        with col_a2:
+            add_barcode = st.text_input("Mã vạch định danh:", key="w_add_bar").strip()
+        with col_a3:
+            add_nsx = st.date_input("Ngày sản xuất:", value=date.today(), key="w_add_nsx").strftime("%Y-%m-%d")
+        with col_a4:
+            add_nhh = st.date_input("Hạn sử dụng:", value=date.today(), key="w_add_nhh").strftime("%Y-%m-%d")
+        with col_a5:
+            add_loc = st.text_input("Vị trí kệ kho chi tiết:", key="w_add_loc").strip()
+            
         if st.button("➕ XÁC NHẬN GHI SỔ NHẬP KHO", type="primary", use_container_width=True):
-            if not add_name or not add_barcode or not add_loc: st.error("Vui lòng nhập đầy đủ thông tin!")
-            elif any(x["ma_vach"] == add_barcode for x in st.session_state.kho_hang): st.error("Mã vạch này đã tồn tại sẵn!")
+            if not add_name or not add_barcode or not add_loc:
+                st.error("Vui lòng nhập đầy đủ thông tin!")
+            elif any(x["ma_vach"] == add_barcode for x in st.session_state.kho_hang):
+                st.error("Mã vạch này đã tồn tại sẵn!")
             else:
                 st.session_state.kho_hang.append({"ten": add_name.upper(), "ma_vach": add_barcode, "ngay_sx": add_nsx, "ngay_hh": add_nhh, "vi_tri": add_loc})
                 luu_du_lieu_he_thong()
@@ -173,12 +188,14 @@ else:
                 st.rerun()
         st.markdown("---")
         
+        # CHỨC NĂNG: SỬA / XÓA SẢN PHẨM TRỰC TIẾP (Đã làm phẳng lề hoàn toàn để chống lỗi)
         st.markdown("#### ✏️ Sửa đổi thông tin chi tiết / Xóa bỏ vật tư")
         if st.session_state.kho_hang:
             for idx, item in enumerate(st.session_state.kho_hang):
-                col_e1, col_e2, col_e3, col_btn1, col_btn2 = st.columns(5)
-                with col_e1: e_name = st.text_input(f"Tên hàng #{idx+1}", value=item["ten"], key=f"we_name_{idx}").strip()
-                with col_e2: e_bar = st.text_input(f"Mã vạch #{idx+1}", value=item["ma_vach"], key=f"we_bar_{idx}").strip()
-                with col_e3: e_loc = st.text_input(f"Vị trí kệ #{idx+1}", value=item["vi_tri"], key=f"we_loc_{idx}").strip()
-                with col_btn1:
-                    if st.button("LƯU", key=f"w_save_btn_{idx}", use_container_width=True):
+                st.markdown(f"**📦 Cập nhật mặt hàng #{idx+1}: {item['ten']}**")
+                e_name = st.text_input(f"Sửa tên hàng #{idx+1}:", value=item["ten"], key=f"we_name_{idx}").strip()
+                e_bar = st.text_input(f"Sửa mã vạch #{idx+1}:", value=item["ma_vach"], key=f"we_bar_{idx}").strip()
+                e_loc = st.text_input(f"Sửa vị trí #{idx+1}:", value=item["vi_tri"], key=f"we_loc_{idx}").strip()
+                
+                if st.button(f"💾 LƯU THAY ĐỔI HÀNG #{idx+1}", key=f"w_save_btn_{idx}", use_container_width=True):
+                    if not e_name or not e_bar or not e_loc:
