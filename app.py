@@ -12,7 +12,7 @@ st.set_page_config(
     page_icon="🏭"
 )
 
-DB_FILE = "dulieu_kho_hongphat_smarthub.json"
+DB_FILE = "smart_hub_db.json"
 
 ROLE_LABELS = {
     "1_creator": "👑 CREATOR",
@@ -22,14 +22,15 @@ ROLE_LABELS = {
 }
 
 # =========================
-# UTIL
+# UTIL FUNCTIONS
 # =========================
-def luu_du_lieu():
+def save_data():
     with open(DB_FILE, "w", encoding="utf-8") as f:
         json.dump({
             "users": st.session_state.users,
             "kho_hang": st.session_state.kho_hang
         }, f, ensure_ascii=False, indent=4)
+
 
 def remove_vietnamese(text):
     if not text:
@@ -38,11 +39,12 @@ def remove_vietnamese(text):
     r = "aaaaaaaaaaaaaaaaaeeeeeeeeeeeiiiiiooooooooooooooooouuuuuuuuuuuyyyyyd"
     return text.translate(str.maketrans(s, r)).lower()
 
+
 # =========================
-# INIT DATA
+# INIT DB
 # =========================
 if not os.path.exists(DB_FILE):
-    default_data = {
+    default = {
         "users": {
             "admin": {
                 "name": "Admin",
@@ -57,12 +59,13 @@ if not os.path.exists(DB_FILE):
                 "ma_vach": "1111",
                 "ngay_sx": "2026-01-01",
                 "ngay_hh": "2026-06-30",
-                "vi_tri": "Khu A"
+                "vi_tri": "Khu A - Ke 01"
             }
         ]
     }
     with open(DB_FILE, "w", encoding="utf-8") as f:
-        json.dump(default_data, f, ensure_ascii=False, indent=4)
+        json.dump(default, f, ensure_ascii=False, indent=4)
+
 
 if "users" not in st.session_state:
     with open(DB_FILE, "r", encoding="utf-8") as f:
@@ -73,6 +76,7 @@ if "users" not in st.session_state:
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.current_user = None
+
 
 # =========================
 # LOGIN
@@ -87,7 +91,7 @@ if not st.session_state.logged_in:
         st.subheader("Đăng nhập")
 
         u = st.text_input("User")
-        p = st.text_input("Pass", type="password")
+        p = st.text_input("Password", type="password")
 
         if st.button("Login"):
             if u in st.session_state.users:
@@ -105,11 +109,11 @@ if not st.session_state.logged_in:
 
         ru = st.text_input("User mới")
         rn = st.text_input("Tên")
-        rp = st.text_input("Pass mới", type="password")
+        rp = st.text_input("Password", type="password")
 
         if st.button("Register"):
             if ru in st.session_state.users:
-                st.error("Đã tồn tại")
+                st.error("User đã tồn tại")
             else:
                 st.session_state.users[ru] = {
                     "name": rn,
@@ -117,8 +121,9 @@ if not st.session_state.logged_in:
                     "active": True,
                     "role": "4_staff"
                 }
-                luu_du_lieu()
-                st.success("OK")
+                save_data()
+                st.success("Tạo tài khoản thành công")
+
 
 # =========================
 # DASHBOARD
@@ -137,69 +142,76 @@ else:
     st.markdown("---")
 
     # =========================
-    # SMART SEARCH (GOOGLE STYLE)
+    # SEARCH (GOOGLE STYLE FIX)
     # =========================
-    st.markdown("### 🔍 Smart Search")
+    st.subheader("🔍 Smart Search")
 
-    search = st.text_input("Tìm sản phẩm / mã vạch")
+    search = st.text_input("Tìm hàng hóa / mã vạch")
 
     search_clean = remove_vietnamese(search)
 
-    result_top = []
-    result_mid = []
+    results = []
+    results_secondary = []
 
     for item in st.session_state.kho_hang:
 
-        name_clean = remove_vietnamese(item["ten"])
+        name = remove_vietnamese(item["ten"])
         code = item["ma_vach"].lower()
 
         if search_clean == "":
-            result_top.append(item)
+            results.append(item)
             continue
 
-        match_start = any(
-            w.startswith(search_clean)
-            for w in name_clean.split()
-        )
+        # ưu tiên prefix mạnh như Google
+        prefix_name = name.startswith(search_clean)
+        prefix_word = any(w.startswith(search_clean) for w in name.split())
+        prefix_code = code.startswith(search_clean)
+        contain = search_clean in name
 
-        match_code = code.startswith(search_clean)
-        match_contain = search_clean in name_clean
+        if prefix_name or prefix_word or prefix_code:
+            results.insert(0, item)
+        elif contain:
+            results_secondary.append(item)
 
-        if match_start or match_code:
-            result_top.append(item)
-        elif match_contain:
-            result_mid.append(item)
+    final = results + results_secondary
 
-    results = result_top + result_mid
+    st.info(f"🔎 Tìm thấy {len(final)} sản phẩm")
 
-    st.info(f"Tìm thấy {len(results)} sản phẩm")
-
-    for item in results[:20]:
-
-        st.write(f"📦 {item['ten']}")
+    for item in final[:30]:
+        st.markdown(f"**📦 {item['ten']}**")
         st.write(f"📍 {item['vi_tri']}")
         st.write(f"🏷️ {item['ma_vach']}")
-        st.write("---")
+        st.write(f"📅 {item['ngay_hh']}")
+        st.divider()
+
 
     # =========================
     # ADMIN PANEL
     # =========================
     if user["role"] in ["1_creator", "2_owner", "3_admin"]:
 
-        st.markdown("### ⚙️ Admin Panel")
+        st.markdown("## ⚙️ Admin Panel")
 
-        name = st.text_input("Tên hàng")
-        code = st.text_input("Mã vạch")
-        loc = st.text_input("Vị trí")
+        col1, col2, col3 = st.columns(3)
 
-        if st.button("Thêm hàng"):
-            st.session_state.kho_hang.append({
-                "ten": name.upper(),
-                "ma_vach": code,
-                "ngay_sx": str(date.today()),
-                "ngay_hh": str(date.today()),
-                "vi_tri": loc
-            })
-            luu_du_lieu()
-            st.success("Đã thêm")
-            st.rerun()
+        with col1:
+            name = st.text_input("Tên hàng")
+        with col2:
+            code = st.text_input("Mã vạch")
+        with col3:
+            loc = st.text_input("Vị trí")
+
+        if st.button("➕ Thêm hàng"):
+            if name and code and loc:
+                st.session_state.kho_hang.append({
+                    "ten": name.upper(),
+                    "ma_vach": code,
+                    "ngay_sx": str(date.today()),
+                    "ngay_hh": str(date.today()),
+                    "vi_tri": loc
+                })
+                save_data()
+                st.success("Đã thêm sản phẩm")
+                st.rerun()
+            else:
+                st.error("Thiếu thông tin")
