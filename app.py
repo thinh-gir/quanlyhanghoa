@@ -99,7 +99,7 @@ else:
     u_now = st.session_state.users[st.session_state.current_user]
     role_now = u_now["role"]
     
-    col_hd1, col_hd2 = st.columns()
+    col_hd1, col_hd2 = st.columns(2)  # Đã sửa lỗi: Thêm số 2 vào đây để phân chia 2 cột rõ ràng
     with col_hd1:
         st.markdown(f"<h1 style='color: #0071CE; margin:0;'>🔵 WALMART INVENTORY HUB — HỒNG PHÁT</h1>", unsafe_allow_html=True)
         st.write(f"👤 Người trực: **{u_now['name']}** | Chức vụ: `{ROLE_LABELS[role_now]}`")
@@ -128,16 +128,11 @@ else:
 
     st.markdown("---")
     
-    # ==========================================
-    # CHỨC NĂNG NÂNG CẤP: GỢI Ý SEARCH GOOGLE / WALMART
-    # ==========================================
+    # CHỨC NĂNG: GỢI Ý SEARCH GOOGLE / WALMART
     st.markdown("### 🔍 SMART AUTO-COMPLETE SEARCH (Gợi ý tìm kiếm thông minh ABC)")
-    
-    # Ô nhập từ khóa chữ cái
     q_search = st.text_input("Gõ từ khóa hoặc quét mã vạch (Hệ thống tự xếp lịch gợi ý theo bảng chữ cái):", key="walmart_smart_search").strip()
     q_clean = loai_bo_dau_tieng_viet(q_search)
 
-    # Thuật toán phân tách và sắp xếp gợi ý theo bảng chữ cái A-Z
     start_with_query = []
     contain_query = []
 
@@ -146,22 +141,18 @@ else:
         ma_vach_clean = sp["ma_vach"].lower()
         
         if q_clean in ten_clean or q_clean in ma_vach_clean:
-            # Nếu tên hoặc mã vạch BẮT ĐẦU bằng từ khóa gõ vào (Ví dụ gõ 'c' ra 'CHOCOMONT') -> Ưu tiên xếp lên đầu
             if ten_clean.startswith(q_clean) or ma_vach_clean.startswith(q_clean):
                 start_with_query.append(sp)
             else:
                 contain_query.append(sp)
 
-    # Sắp xếp từng nhóm độc lập theo bảng chữ cái từ A-Z dựa theo tên sản phẩm
     start_with_query.sort(key=lambda x: x["ten"])
     contain_query.sort(key=lambda x: x["ten"])
 
-    # Gom hai nhóm lại thành danh sách gợi ý hoàn chỉnh (Ưu tiên từ bắt đầu -> từ chứa bên trong)
     danh_sach_goi_y = start_with_query + contain_query
 
-    # Đưa danh sách gợi ý vào Selectbox giống như thanh hiển thị Dropdown gợi ý dưới ô Search Walmart
     options_goi_y = ["-- Chọn từ danh sách gợi ý kết quả bên dưới --"]
-    for idx, item in enumerate(danh_sach_goi_y):
+    for item in danh_sach_goi_y:
         options_goi_y.append(f"🛒 {item['ten'].upper()} [Mã vạch: {item['ma_vach']}]")
 
     if q_search:
@@ -185,7 +176,7 @@ else:
         
         # CHỨC NĂNG: NHẬP VẬT TƯ MỚI
         st.markdown("#### ➕ Nhập thêm vật tư mới")
-        col_a1, col_a2, col_a3, col_a4, col_a5 = st.columns()
+        col_a1, col_a2, col_a3, col_a4, col_a5 = st.columns(5) # Đã sửa lỗi: Thêm số 5 vào đây
         with col_a1: add_name = st.text_input("Tên sản phẩm:", key="w_add_name").strip()
         with col_a2: add_barcode = st.text_input("Mã vạch:", key="w_add_bar").strip()
         with col_a3: add_nsx = st.date_input("Ngày SX:", value=date.today(), key="w_add_nsx").strftime("%Y-%m-%d")
@@ -201,3 +192,13 @@ else:
                 st.session_state.kho_hang.append({"ten": add_name.upper(), "ma_vach": add_barcode, "ngay_sx": add_nsx, "ngay_hh": add_nhh, "vi_tri": add_loc})
                 luu_du_lieu_he_thong()
                 st.success(f"Đã thêm sản phẩm {add_name.upper()}!")
+                st.rerun()
+
+        st.markdown("---")
+        
+        # CHỨC NĂNG: SỬA / XÓA SẢN PHẨM TRỰC TIẾP TRÊN DÒNG
+        st.markdown("#### ✏️ Sửa / Xóa dữ liệu kho")
+        if st.session_state.kho_hang:
+            for idx, item in enumerate(st.session_state.kho_hang):
+                col_e1, col_e2, col_e3, col_btn1, col_btn2 = st.columns(5) # Đã sửa lỗi: Thêm số 5 vào đây
+                with col_e1: e_name = st.text_input(f"Tên hàng #{idx+1}", value=item["ten"], key=f"we_name_{idx}").strip()
