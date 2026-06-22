@@ -8,7 +8,7 @@ from datetime import datetime, date
 # ==========================================
 st.set_page_config(page_title="Hệ thống Quản lý Chợ Hồng Phát", layout="wide", page_icon="🏭")
 
-DB_FILE = "dulieu_kho_hongphat_v4.json"
+DB_FILE = "dulieu_kho_hongphat_v5.json"
 
 ROLE_LABELS = {
     "1_creator": "👑 ĐỒNG SÁNG LẬP DUY NHẤT",
@@ -193,21 +193,20 @@ else:
         st.markdown("---")
         st.header("⚙️ TRUNG TÂM ĐIỀU HÀNH BẢO MẬT & PHÂN QUYỀN CHỢ HỒNG PHÁT")
         
-        tab_nhan_su, tab_them_hang, tab_sua_hang = st.tabs([
-            "👥 Phê duyệt & Quản lý Giai cấp Nhân sự", 
-            "📦 Nhập thêm vật tư mới", 
-            "✏️ Chỉnh sửa thông tin / Xóa bỏ vật tư"
-        ])
+        # Sửa đổi cốt lõi: Thay thế Tab bằng Radio để đảm bảo hiển thị 100% không lỗi ẩn
+        menu_quan_tri = st.radio(
+            "CHỌN CHỨC NĂNG QUẢN TRỊ:",
+            ["👥 Phê duyệt & Quản lý Giai cấp Nhân sự", "📦 Nhập thêm vật tư mới vào kho", "✏️ Chỉnh sửa thông tin / Xóa bỏ vật tư hiện tại"],
+            horizontal=True
+        )
         
-        # --- TAB 1: PHÊ DUYỆT TÀI KHOẢN ---
-        with tab_nhan_su:
+        st.markdown("---")
+        
+        # --- MENU 1: PHÊ DUYỆT TÀI KHOẢN ---
+        if menu_quan_tri == "👥 Phê duyệt & Quản lý Giai cấp Nhân sự":
             st.subheader("Bảng danh sách nhân sự hiện thời")
             bang_hien_thi = []
             for tk, thong_tin_tk in st.session_state.users.items():
                 bang_hien_thi.append({
                     "Tài khoản hệ thống": tk,
                     "Họ và tên thật": thong_tin_tk["name"],
-                    "Cấp bậc chức vụ": ROLE_LABELS[thong_tin_tk["role"]],
-                    "Quyền hoạt động": "🟢 Hoạt động bình thường" if thong_tin_tk["active"] else "🔴 Đang bị khóa quyền"
-                })
-            st.table(bang_hien_thi)
